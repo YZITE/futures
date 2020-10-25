@@ -1,0 +1,14 @@
+[package]
+name = "yz-futures-sink"
+description = "A tweaked and splitted asynchronous `Sink` trait"
+version = "0.1.0"
+authors = ["Alex Crichton <alex@alexcrichton.com>", "Erik Zscheile <zseri.devel@ytrizja.de>"]
+edition = "2018"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/YZITE/futures"
+
+[features]
+default = ["alloc"]
+alloc = []
+
+[dependencies]
