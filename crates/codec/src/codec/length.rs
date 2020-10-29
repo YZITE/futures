@@ -10,7 +10,7 @@ use std::marker::PhantomData;
 /// This codec will most likely be used wrapped in another codec like so.
 ///
 /// ```
-/// use yz_futures_codec::codec::{Decoder, Encoder, Length, OverflowError};
+/// use yz_futures_codec::codec::{Decoder, Encoder, EncoderError, Length, OverflowError};
 /// use bytes::{Bytes, BytesMut};
 /// use std::io::{Error, ErrorKind};
 ///
@@ -31,13 +31,13 @@ use std::marker::PhantomData;
 ///     }
 /// }
 ///
-/// impl Encoder for MyStringCodec {
-///     type Item = String;
+/// impl EncoderError for MyStringCodec {
 ///     type Error = MyError;
+/// }
 ///
-///     fn encode(&mut self, src: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
-///         let bytes = Bytes::from(src);
-///         self.0.encode(bytes, dst)?;
+/// impl Encoder<str> for MyStringCodec {
+///     fn encode(&mut self, src: &str, dst: &mut BytesMut) -> Result<(), Self::Error> {
+///         self.0.encode(src.as_bytes(), dst)?;
 ///         Ok(())
 ///     }
 /// }
@@ -105,14 +105,20 @@ macro_rules! impl_length {
 
 impl_length!(u8 => 1, u16 => 2, u32 => 4, u64 => 8);
 
-impl<L: LengthType> Encoder for Length<L> {
-    type Item = Bytes;
+impl<L: LengthType> super::EncoderError for Length<L> {
     type Error = OverflowError;
+}
 
-    fn encode(&mut self, src: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+impl<Item, L> Encoder<Item> for Length<L>
+where
+    Item: AsRef<[u8]> + ?Sized,
+    L: LengthType,
+{
+    fn encode(&mut self, src: &Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+        let src = src.as_ref();
         dst.reserve(Self::HEADER_LEN + src.len());
         L::encode(src.len(), dst)?;
-        dst.extend_from_slice(&src);
+        dst.extend_from_slice(src);
         Ok(())
     }
 }
@@ -145,12 +151,16 @@ pub struct LenSkipAhead {
 impl super::SkipAheadHandler for LenSkipAhead {
     fn continue_skipping(mut self, src: &[u8]) -> Result<(usize, Option<Self>), ()> {
         use std::convert::TryInto;
-        Ok(if usize::try_from(self.remaining).map(|rem| src.len() >= rem) == Ok(true) {
-            (self.remaining.try_into().unwrap(), None)
-        } else /* src.len() < self.remaining */ {
-            self.remaining -= u64::try_from(src.len()).unwrap();
-            (src.len(), Some(self))
-        })
+        Ok(
+            if usize::try_from(self.remaining).map(|rem| src.len() >= rem) == Ok(true) {
+                (self.remaining.try_into().unwrap(), None)
+            } else
+            /* src.len() < self.remaining */
+            {
+                self.remaining -= u64::try_from(src.len()).unwrap();
+                (src.len(), Some(self))
+            },
+        )
     }
 }
 
@@ -165,9 +175,7 @@ impl<L: LengthType> super::DecoderWithSkipAhead for Length<L> {
         // skip the length header we already read.
         src.advance(Self::HEADER_LEN);
 
-        LenSkipAhead {
-            remaining: len,
-        }
+        LenSkipAhead { remaining: len }
     }
 }
 

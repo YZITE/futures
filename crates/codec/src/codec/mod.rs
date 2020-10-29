@@ -20,15 +20,18 @@ pub trait Decoder {
     }
 }
 
-/// Encoding of messages as bytes, for use with [`Framed`](crate::Framed).
-pub trait Encoder {
-    /// The type of items consumed by `encode`
-    type Item;
+/// helper trait
+pub trait EncoderError {
     /// The type of encoding errors.
     type Error: std::error::Error + 'static;
+}
 
+/// Encoding of messages as bytes, for use with [`Framed`](crate::Framed).
+///
+/// `Item` is the type of items consumed by `encode`
+pub trait Encoder<Item: ?Sized>: EncoderError {
     /// Encodes an item into the `BytesMut` provided by dst.
-    fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error>;
+    fn encode(&mut self, item: &Item, dst: &mut BytesMut) -> Result<(), Self::Error>;
 }
 
 macro_rules! impl_phantom {

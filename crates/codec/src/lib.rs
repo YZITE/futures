@@ -28,9 +28,9 @@ use bytes::Buf;
 pub use bytes::{Bytes, BytesMut};
 use futures_core::{ready, Stream};
 use futures_io::{AsyncRead, AsyncWrite};
-use yz_futures_sink::{FlushSink, Sink};
 use std::task::{Context, Poll};
 use std::{io, ops::Deref, pin::Pin};
+use yz_futures_sink::{FlushSink, Sink};
 
 /// The generic error enum for this crate.
 #[derive(Debug, thiserror::Error)]
@@ -46,7 +46,7 @@ pub enum Error<C: std::error::Error + 'static> {
 
 /// Codecs
 pub mod codec;
-use codec::{Decoder, Encoder};
+use codec::{Decoder, Encoder, EncoderError};
 
 /// A unified `Stream` and `Sink` interface to an underlying I/O object,
 /// using the `Encoder` and `Decoder` traits to encode and decode frames.
@@ -63,8 +63,7 @@ use codec::{Decoder, Encoder};
 /// let mut framed = Framed::new(cur, BytesCodec {});
 ///
 /// // Send bytes to `buf` through the `BytesCodec`
-/// let bytes = Bytes::from("Hello world!");
-/// framed.send_unpin(bytes).await?;
+/// framed.send_unpin("Hello world!").await?;
 ///
 /// // Release the I/O and codec
 /// let (cur, _) = framed.release();
@@ -208,7 +207,7 @@ impl<T: AsyncRead, U: Decoder> Stream for Framed<T, U> {
     }
 }
 
-impl<T: AsyncWrite, U: Encoder> Framed<T, U> {
+impl<T: AsyncWrite, U> Framed<T, U> {
     fn poll_flush_until(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -238,7 +237,11 @@ impl<T: AsyncWrite, U: Encoder> Framed<T, U> {
     }
 }
 
-impl<T: AsyncWrite, U: Encoder> FlushSink for Framed<T, U> {
+impl<T, U> FlushSink for Framed<T, U>
+where
+    T: AsyncWrite,
+    U: EncoderError,
+{
     type Error = Error<U::Error>;
 
     fn poll_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
@@ -255,8 +258,13 @@ impl<T: AsyncWrite, U: Encoder> FlushSink for Framed<T, U> {
     }
 }
 
-impl<T: AsyncWrite, U: Encoder> Sink<U::Item> for Framed<T, U> {
-    fn start_send(self: Pin<&mut Self>, item: U::Item) -> Result<(), Self::Error> {
+impl<'a, Item, T, U> Sink<&'a Item> for Framed<T, U>
+where
+    Item: ?Sized,
+    T: AsyncWrite,
+    U: Encoder<Item>,
+{
+    fn start_send(self: Pin<&mut Self>, item: &'a Item) -> Result<(), Self::Error> {
         let this = self.project();
         this.codec.encode(item, this.w_buffer).map_err(Error::Codec)
     }

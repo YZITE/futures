@@ -18,7 +18,7 @@ use std::convert::Infallible;
 /// let cur = Cursor::new(&mut buf);
 /// let mut framed = Framed::new(cur, BytesCodec);
 ///
-/// framed.send_unpin(Bytes::from("Hello World!")).await?;
+/// framed.send_unpin("Hello World!").await?;
 ///
 /// while let Some(bytes) = framed.try_next().await? {
 ///     dbg!(bytes);
@@ -29,12 +29,16 @@ use std::convert::Infallible;
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct BytesCodec;
 
-impl Encoder for BytesCodec {
-    type Item = Bytes;
+impl super::EncoderError for BytesCodec {
     type Error = Infallible;
+}
 
-    fn encode(&mut self, src: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
-        dst.extend_from_slice(&src);
+impl<Item> Encoder<Item> for BytesCodec
+where
+    Item: AsRef<[u8]> + ?Sized,
+{
+    fn encode(&mut self, src: &Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+        dst.extend_from_slice(src.as_ref());
         Ok(())
     }
 }

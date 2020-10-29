@@ -1,8 +1,8 @@
-use std::marker::PhantomData;
 use super::{Decoder, Encoder};
 use bytes::{Buf, BufMut, BytesMut};
 use serde::{Deserialize, Serialize};
 use serde_json::Error;
+use std::marker::PhantomData;
 
 /// A codec for JSON encoding and decoding using serde_json
 /// Enc is the type to encode, Dec is the type to decode
@@ -63,17 +63,21 @@ where
     }
 }
 
-/// Encoder impl encodes object streams to bytes
-impl<Enc, Dec> Encoder for Json<Enc, Dec>
+impl<Enc, Dec> super::EncoderError for Json<Enc, Dec>
 where
     Enc: Serialize + 'static,
 {
-    type Item = Enc;
     type Error = Error;
+}
 
-    fn encode(&mut self, data: Self::Item, buf: &mut BytesMut) -> Result<(), Self::Error> {
+/// Encoder impl encodes object streams to bytes
+impl<Enc, Dec> Encoder<Enc> for Json<Enc, Dec>
+where
+    Enc: Serialize + 'static,
+{
+    fn encode(&mut self, data: &Enc, buf: &mut BytesMut) -> Result<(), Self::Error> {
         // Encode json
-        let j = serde_json::to_string(&data)?;
+        let j = serde_json::to_string(data)?;
 
         // Write to buffer
         buf.reserve(j.len());

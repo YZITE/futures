@@ -1,8 +1,8 @@
-use core::pin::Pin;
-use core::marker::Unpin;
 use core::future::Future;
+use core::marker::Unpin;
+use core::pin::Pin;
 use core::task::{Context, Poll};
-use futures_core::{Stream, ready};
+use futures_core::{ready, Stream};
 #[doc(no_inline)]
 pub use yz_futures_sink::{FlushSink, Sink};
 
@@ -52,19 +52,22 @@ impl<Si, St, O> Unpin for SendAll<'_, Si, St, O>
 where
     Si: ?Sized + FlushSink,
     St: ?Sized + Stream<Item = Result<O, <Si as FlushSink>::Error>>,
-{}
+{
+}
 
 impl<Si, St, O> SendAll<'_, Si, St, O>
 where
     Si: ?Sized + Sink<O>,
     St: ?Sized + Stream<Item = Result<O, <Si as FlushSink>::Error>>,
 {
-    fn try_start_send(&mut self, cx: &mut Context<'_>, item: O) -> Poll<Result<(), <Si as FlushSink>::Error>> {
+    fn try_start_send(
+        &mut self,
+        cx: &mut Context<'_>,
+        item: O,
+    ) -> Poll<Result<(), <Si as FlushSink>::Error>> {
         debug_assert!(self.buffered.is_none());
         match self.sink.as_mut().poll_ready(cx)? {
-            Poll::Ready(()) => {
-                Poll::Ready(self.sink.as_mut().start_send(item))
-            }
+            Poll::Ready(()) => Poll::Ready(self.sink.as_mut().start_send(item)),
             Poll::Pending => {
                 self.buffered = Some(item);
                 Poll::Pending
@@ -91,9 +94,7 @@ where
 
         while let Some(x) = &mut this.stream {
             match x.as_mut().poll_next(cx)? {
-                Poll::Ready(Some(item)) => {
-                    ready!(this.try_start_send(cx, item))?
-                }
+                Poll::Ready(Some(item)) => ready!(this.try_start_send(cx, item))?,
                 Poll::Ready(None) => {
                     this.stream = None;
                     ready!(this.sink.as_mut().poll_flush(cx))?;

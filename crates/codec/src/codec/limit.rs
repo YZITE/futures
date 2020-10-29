@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-use super::{Decoder, Encoder};
+use super::{Decoder, Encoder, EncoderError};
 use bytes::{Buf, BytesMut};
 
 pub trait SkipAheadHandler: Sized + std::fmt::Debug {
@@ -82,14 +82,16 @@ pub enum LimitError<E: std::error::Error + 'static> {
     Inner(#[from] E),
 }
 
-impl<C> Encoder for Limit<C>
-where
-    C: Encoder + DecoderWithSkipAhead,
-{
-    type Item = <C as Encoder>::Item;
-    type Error = LimitError<<C as Encoder>::Error>;
+impl<C: DecoderWithSkipAhead + EncoderError> EncoderError for Limit<C> {
+    type Error = LimitError<<C as EncoderError>::Error>;
+}
 
-    fn encode(&mut self, src: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+impl<Item, C> Encoder<Item> for Limit<C>
+where
+    Item: ?Sized,
+    C: Encoder<Item> + DecoderWithSkipAhead,
+{
+    fn encode(&mut self, src: &Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
         let mut tmp_dst = dst.split_off(dst.len());
         self.inner.encode(src, &mut tmp_dst)?;
 
@@ -132,15 +134,15 @@ where
             src.clear();
             return Err(LimitError::Defunct);
         }
-            match self.inner.decode(src) {
-                Ok(None) if src.len() > self.max_frame_size => {
-                    // prepare skip ahead
-                    self.skip_ahead_state = Some(self.inner.prepare_skip_ahead(src));
-                    Err(LimitError::LimitExceeded(src.len()))
-                }
-                Ok(x) => Ok(x),
-                Err(x) => Err(LimitError::Inner(x)),
+        match self.inner.decode(src) {
+            Ok(None) if src.len() > self.max_frame_size => {
+                // prepare skip ahead
+                self.skip_ahead_state = Some(self.inner.prepare_skip_ahead(src));
+                Err(LimitError::LimitExceeded(src.len()))
             }
+            Ok(x) => Ok(x),
+            Err(x) => Err(LimitError::Inner(x)),
+        }
     }
 }
 

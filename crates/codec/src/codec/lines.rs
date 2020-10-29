@@ -21,11 +21,16 @@ use std::convert::Infallible;
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Lines;
 
-impl Encoder for Lines {
-    type Item = String;
+impl super::EncoderError for Lines {
     type Error = Infallible;
+}
 
-    fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+impl<Item> Encoder<Item> for Lines
+where
+    Item: AsRef<str> + ?Sized,
+{
+    fn encode(&mut self, item: &Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+        let item = item.as_ref();
         dst.reserve(item.len());
         dst.put(item.as_bytes());
         Ok(())

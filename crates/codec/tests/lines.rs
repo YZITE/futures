@@ -1,6 +1,6 @@
 use futures_lite::future::block_on;
 use futures_util::{io::Cursor, stream::TryStreamExt};
-use yz_futures_codec::{Framed, codec::Lines};
+use yz_futures_codec::{codec::Lines, Framed};
 
 #[test]
 fn it_works() {

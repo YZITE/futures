@@ -3,8 +3,8 @@
 extern crate test;
 
 use futures_lite::future::block_on;
-use futures_util::{stream::TryStreamExt, io::Cursor};
-use yz_futures_codec::{Framed, codec::Lines};
+use futures_util::{io::Cursor, stream::TryStreamExt};
+use yz_futures_codec::{codec::Lines, Framed};
 
 #[bench]
 fn short(b: &mut test::Bencher) {

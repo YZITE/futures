@@ -1,4 +1,4 @@
-use super::{Decoder, Encoder};
+use super::{Decoder, Encoder, EncoderError};
 use bytes::{Buf, BufMut, BytesMut};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
@@ -63,17 +63,21 @@ where
     }
 }
 
-/// Encoder impl encodes object streams to bytes
-impl<Enc, Dec> Encoder for Cbor<Enc, Dec>
+impl<Enc, Dec> super::EncoderError for Cbor<Enc, Dec>
 where
     Enc: Serialize + 'static,
 {
-    type Item = Enc;
     type Error = serde_cbor::Error;
+}
 
-    fn encode(&mut self, data: Self::Item, buf: &mut BytesMut) -> Result<(), Self::Error> {
+/// Encoder impl encodes object streams to bytes
+impl<Enc, Dec> Encoder<Enc> for Cbor<Enc, Dec>
+where
+    Enc: Serialize + 'static,
+{
+    fn encode(&mut self, data: &Enc, buf: &mut BytesMut) -> Result<(), Self::Error> {
         // Encode cbor
-        let j = serde_cbor::to_vec(&data)?;
+        let j = serde_cbor::to_vec(data)?;
 
         // Write to buffer
         buf.reserve(j.len());

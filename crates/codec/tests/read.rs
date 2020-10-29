@@ -3,7 +3,7 @@ use futures_util::{io::AsyncRead, stream::StreamExt};
 use std::io;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use yz_futures_codec::{BytesMut, codec::Decoder, Framed, codec::Lines};
+use yz_futures_codec::{codec::Decoder, codec::Lines, BytesMut, Framed};
 
 // Sends two lines at once, then nothing else forever
 struct MockBurstySender {
