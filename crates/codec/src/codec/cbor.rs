@@ -9,7 +9,7 @@ use std::marker::PhantomData;
 /// # use futures_util::{stream::TryStreamExt, io::Cursor};
 /// use serde::{Serialize, Deserialize};
 /// use yz_futures_codec::{codec::Cbor, Framed};
-/// use yz_futures_util::SinkExt;
+/// use yz_futures_util::sink::SinkExt;
 ///
 /// #[derive(Serialize, Deserialize)]
 /// struct Something {

@@ -1,7 +1,7 @@
 use futures_lite::future::block_on;
 use futures_util::{io::Cursor, stream::StreamExt};
 use yz_futures_codec::{Bytes, Framed, codec::Length};
-use yz_futures_util::SinkExt;
+use yz_futures_util::sink::SinkExt;
 
 #[test]
 fn same_msgs_are_received_as_were_sent() {

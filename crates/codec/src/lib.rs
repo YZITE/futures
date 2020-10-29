@@ -56,7 +56,7 @@ use codec::{Decoder, Encoder};
 /// use bytes::Bytes;
 /// use futures_util::{stream::TryStreamExt, io::Cursor};
 /// use yz_futures_codec::{codec::BytesCodec, Framed, Error};
-/// use yz_futures_util::SinkExt;
+/// use yz_futures_util::sink::SinkExt;
 ///
 /// # futures_lite::future::block_on(async move {
 /// let cur = Cursor::new(vec![0u8; 12]);

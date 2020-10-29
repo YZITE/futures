@@ -11,7 +11,7 @@ use std::convert::Infallible;
 /// use bytes::Bytes;
 /// use futures_util::{stream::TryStreamExt, io::Cursor};
 /// use yz_futures_codec::{codec::BytesCodec, Framed};
-/// use yz_futures_util::SinkExt;
+/// use yz_futures_util::sink::SinkExt;
 ///
 /// let mut buf = vec![];
 /// // Cursor implements AsyncRead and AsyncWrite

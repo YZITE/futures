@@ -5,7 +5,7 @@ use futures_util::stream::{self, StreamExt};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use yz_futures_codec::{Bytes, codec::BytesCodec, Framed, codec::Lines};
-use yz_futures_util::SinkExt;
+use yz_futures_util::sink::SinkExt;
 
 // An iterator which outputs a single zero byte up to limit times
 struct ZeroBytes {

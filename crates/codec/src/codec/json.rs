@@ -10,7 +10,7 @@ use serde_json::Error;
 /// # use futures_util::{stream::TryStreamExt, io::Cursor};
 /// use serde::{Serialize, Deserialize};
 /// use yz_futures_codec::{codec::Json, Framed};
-/// use yz_futures_util::SinkExt;
+/// use yz_futures_util::sink::SinkExt;
 ///
 /// #[derive(Serialize, Deserialize)]
 /// struct Something {
