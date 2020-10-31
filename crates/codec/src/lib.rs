@@ -1,3 +1,6 @@
+// Copyright (c) 2020 Erik Zscheile
+// Copyright (c) 2019 Matt Hunzinger
+
 //! Utilities for encoding and decoding frames using `async/await`.
 //!
 //! Contains adapters to go from streams of bytes, [`AsyncRead`](futures_io::AsyncRead)
