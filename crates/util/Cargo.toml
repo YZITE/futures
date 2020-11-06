@@ -9,7 +9,7 @@ categories = ["asynchronous"]
 
 [dependencies]
 futures-core = "0.3"
-futures-micro = "0.3.1"
+futures-micro = "0.4"
 
 [dependencies.yz-futures-sink]
 version = "0.1"

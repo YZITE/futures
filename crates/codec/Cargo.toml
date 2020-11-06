@@ -22,10 +22,10 @@ cbor = [ "serde", "serde_cbor" ]
 all-features = true
 
 [dependencies]
-bytes = "0.5"
+bytes = "0.6"
 futures-core = "0.3"
 futures-io = "0.3"
-memchr = "2.2"
+memchr = "2.3"
 pin-project = "1.0"
 thiserror = "1.0"
 
